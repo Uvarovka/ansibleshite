@@ -1,0 +1,17 @@
+---
+- name: Change sshd file config
+  hosts: all
+  
+  tasks: 
+  - name: Change Port22 to Port 1834
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: '^#Port'
+      line: 'Port 1834'
+
+  - name: uncomment Pubkey
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: '^#\s*PubkeyAuthentication.*$'
+      line: 'PubkeyAuthentication yes'
+...

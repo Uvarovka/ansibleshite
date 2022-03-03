@@ -1,0 +1,15 @@
+---
+- name: 'package_installation'
+  hosts: all
+  remote_user: root
+
+  tasks:
+    - name: curl
+      ansible.builtin.apt:
+        name: curl
+        state: latest
+    - name: nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: latest
+...

@@ -1,0 +1,12 @@
+---
+- name: Run using a project directory
+  hosts: all
+
+  tasks:
+    - name: Fuck off
+      docker_compose:
+        project_src: /etc/skillcloud-nginx/
+        files: docker-compose.yml
+
+...
+       

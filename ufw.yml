@@ -1,0 +1,23 @@
+---
+- name: ufw_set_up
+  hosts: all
+  
+  tasks:
+  - name: 80_tcp_ports
+    ufw:
+      rule: allow
+      port: 80
+      proto: tcp
+
+  - name: open_8080_tcp_ports
+    ufw:
+      rule: allow
+      port: 8080
+      proto: tcp
+
+  - name: open_1834_tcp_ports
+    ufw:
+      rule: allow
+      port: 1834
+      proto: tcp
+...

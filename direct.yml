@@ -1,0 +1,52 @@
+---
+- name: Create_directory
+  hosts: all
+  vars_files: ip_addr_nginx.yml
+    
+  tasks:
+  - name: Create a directory if it does not exist
+    ansible.builtin.file:
+      path: /etc/skillcloud-nginx
+      state: directory
+      mode: '0755'
+  - name: Copy everything to cli
+    ansible.builtin.copy:
+      src: /etc/wsr-skillcloud/docker-compose.sh
+      dest: /etc/skillcloud-nginx
+      mode: '0755'
+  - name: Copy everything to cli
+    ansible.builtin.copy:
+      src: /etc/wsr-skillcloud/docker-compose.yml
+      dest: /etc/skillcloud-nginx
+      mode: '0755'
+  - name: Copy everything to cli
+    ansible.builtin.copy:
+      src: /etc/wsr-skillcloud/Dockerfile-balance
+      dest: /etc/skillcloud-nginx
+      mode: '0755'
+  - name: Copy everything to cli
+    ansible.builtin.copy:
+      src: /etc/wsr-skillcloud/Dockerfile-site
+      dest: /etc/skillcloud-nginx
+      mode: '0755'
+  - name: Copy everything to cli
+    ansible.builtin.copy:
+      src: /etc/wsr-skillcloud/index.html
+      dest: /etc/skillcloud-nginx
+      mode: '0755'
+  - name: Copy everything to cli
+    ansible.builtin.copy:
+      src: /etc/wsr-skillcloud/nginx.conf
+      dest: /etc/skillcloud-nginx
+      mode: '0755'
+
+  - name: Change IP-addresses in nginx.conf
+    template:
+      src: /etc/ansible/nginx.conf.j2
+      dest: /etc/skillcloud-nginx/nginx.conf
+  - name: Change docker-compose.yml
+    template:
+      src: /etc/ansible/docker-compose.yml.j2
+      dest: /etc/skillcloud-nginx/docker-compose.yml
+      
+...
