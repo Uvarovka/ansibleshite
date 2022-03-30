@@ -1,0 +1,11 @@
+---
+- hosts: all
+  name: StartFuckingDocker
+
+  tasks:
+    - name: Start that bitch up
+      shell:
+        chdir: /etc/skillcloud-nginx/
+        cmd: "docker-compose up"
+        
+...

@@ -2,17 +2,41 @@
 - name: Create Users
   hosts: all
   become: true
-  vars_files:
-    - privvars.yml
- 
+   
   tasks:
     - name: User_Webdeveloper
       user:
-        name: "{users}"
-        password: "{ passwords | password_hash('sha512') }"
+        name: Webdeveloper
+        password: "{{ 'S52we9V6QTp7' | password_hash('sha512', 'mysecretsalt') }}"
         shell: /bin/bash
         state: present
-      loop:
-        - Webdeveloper
-        - Devopsengineer
+    - name: User_Devops
+      user:
+        name: Devopsengineer
+        password: "{{ 'dHy6sKGHsj2T' | password_hash('sha512', 'mysecretsalt') }}"
+        shell: /bin/bash
+        state: present
+    - name: User_Projectmanager
+      user:
+        name: Projectmanager
+        password: "{{ 'oP92ugMSaCbe' | password_hash('sha512', 'mysecretsalt') }}"
+        shell: /bin/bash
+        state: present
+    - name: Add_keys_to_users
+      authorized_key:
+        user: Webdeveloper
+        state: present
+        key: "{{lookup('file', 'pubkey')}}"
+
+    - name: Add_keys_to_users
+      authorized_key:
+        user: Devopsengineer
+        state: present
+        key: "{{lookup('file', 'pubkey')}}"
+
+    - name: Add_keys_to_users
+      authorized_key:
+        user: Projectmanager
+        state: present
+        key: "{{lookup('file', 'pubkey')}}"
 ...
