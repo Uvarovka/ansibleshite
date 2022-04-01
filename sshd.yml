@@ -9,6 +9,12 @@
       regexp: '^#Port'
       line: 'Port 1834'
 
+  - name: Comment Port22
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: '^Port 22'
+      line: '#Port 22'
+
   - name: uncomment Pubkey
     lineinfile:
       dest: /etc/ssh/sshd_config

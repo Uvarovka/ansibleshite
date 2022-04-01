@@ -20,4 +20,8 @@
       rule: allow
       port: 1834
       proto: tcp
+  - name: turn_on_ufw
+    ufw:
+      state: enabled
+      policy: allow
 ...

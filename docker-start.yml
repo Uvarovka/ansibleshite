@@ -1,7 +1,9 @@
 ---
-- hosts: all
-  name: StartFuckingDocker
-
+- hosts: after
+  name: StartFuckingDocker  
+  vars:
+    ansible_port: '1834'
+ 
   tasks:
     - name: Start that bitch up
       shell:
