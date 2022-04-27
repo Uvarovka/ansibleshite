@@ -1,0 +1,335 @@
+hostname 
+!
+ip domain-name worldskills.ru (FW: domain-name worldskills.ru)
+!
+username wsruser privilege 15 secret network (FW: username wsruser password network priv 15)
+!
+enable secret wsr
+!
+service password-encryption (FW: password encryption aes)
+!
+aaa new-model (FW: aaa authentication enable console LOCAL)
+!
+aaa authorization exec default local (FW: aaa authentication ssh console LOCAL)
+!
+aaa authentication login default local (FW: aaa authentication telnet console LOCAL)
+!
+aaa authorization console (FW: aaa authorization exec LOCAL)
+!
+HQ1(config)#aaa authentication login method_man group radius local 
+HQ1(config)#aaa authorization exec default group radius local 
+HQ1(config)#aaa authorization console 
+HQ1(config)#line con 0 
+HQ1(config-line)#login authentication method_man 
+HQ1(config-line)#line vty 0 15 
+HQ1(config-line)#login authentication method_man 
+HQ1(config-line)#transport input telnet ssh 
+HQ1(config-line)# exit 
+HQ1(config)#radius server WSR 
+HQ1(config-radius-server)#address ipv4 172.16.20.20 auth-port 1812 acct-
+port 1813 
+HQ1(config-radius-server)# key cisco
+!
+line vty 0 15 (FW: crypto key generate rsa modulus 2048)
+!
+transport input all (FW: aaa authentication ssh console LOCAL)
+!
+exit (FW: ssh version 2)
+!
+crypto key generate rsa modulus 2048 (FW: ssh 30.78.21.0 255.255.255.0 HQ ВАЖНО!!!! ЭТУ КОММАНДУ МОЖНО ПРОПИСАТЬ ТОЛЬКО ПОСЛЕ ПРОПИСКИ FW vlan 20 !!!!)
+!
+ip ssh version 2
+!
+SW1(config)#  int range f 0/5-6 
+SW1(config-if-range)#  channel-group 1 mode active
+!
+SW1(config)#  int range f 0/3-4 
+SW1(config-if-range)#  channel-group 2 mode desirable
+!
+SW2(config)#  int range f 0/5-6 
+SW2(config-if-range)#  channel-group 1 mode passive 
+!
+SW3(config)#  int range f 0/3-4 
+SW3(config-if-range)#  channel-group 2 mode auto
+!
+vlan 100
+name MGT
+vlan 200
+name DATA
+vlan 300
+name OFFICE
+vlan 500
+name NATIVE
+vlan 600
+name SHUTDOWN
+!
+SW1(config)#  vtp domain worldskills.ru 
+SW1(config)#  vtp version 3 
+SW1(config)#  vtp mode server 
+!
+SW2-3(config)#  vtp domain worldskills.ru 
+SW2-3(config)#  vtp version 3 
+SW2-3(config)#  vtp mode client
+!
+SW2-3(config)#  int fa0/2 
+SW2-3(config)#  switchport mode trunk
+SW2-3(config-if)#  switchport nonegotiate
+SW2-3(config)#  int fa0/10 
+SW2-3(config-if)#  switchport mode access 
+SW2-3(config-if)#  switchport nonegotiate 
+!
+SW1(config)#  int fa0/1 
+SW1(config-if)#  switchport mode trunk 
+SW1(config-if)#  switchport nonegotiate
+SW1(config)#  int ra fa0/5-6 
+SW1(config-if-range)#  switchport mode dynamic desirable 
+SW1(config)#  int ra fa0/3-4 
+SW1(config-if-range)#  switchport mode dynamic desirable
+!
+SW2(config)#  int ra fa0/5-6 
+SW2(config-if-range)#  switchport mode dynamic auto 
+SW3(config)#  int ra fa0/3-4 
+SW3(config-if-range)#  switchport mode dynamic auto
+!
+SW1(config)# port-channel load-balance src-ip
+!
+spanning-tree mode pvst
+!
+SW1(config)#  spanning-tree vlan 100,200,300 root primary
+!
+SW2(config)#  spanning-tree vlan 100,200,300 root secondary
+!
+SW1(config)#int fa 0/1 
+SW1(config-if)#spanning-tree portfast trunk
+!
+SW1(config)# int vlan 100 
+SW1(config-if)# ip address 10.100.100.10 255.255.255.0 
+!
+SW2(config)# int vlan 100 
+SW2(config-if)# ip address 10.100.100.20 255.255.255.0 
+! 
+SW3(config)# int vlan 100 
+SW3(config-if)# ip address 10.100.100.30 255.255.255.0
+!
+HQ1(config)#	ipv6 unicast-routing 
+HQ1(config)#	int loopback 0
+HQ1(config-if)#	ip address 1.1.1.1 255.255.255.255 
+HQ1(config-if)#	ipv6 add 2001:A:B:1::1/64 
+HQ1(config-if)#	ipv6 enable
+!
+HQ(config)# int g 0/0/1.100 
+HQ(config-subif)# encapsulation dot1Q 100 
+HQ(config-subif)# ip address 10.100.100.1 255.255.255.0
+!
+HQ(config)# int g 0/0/1.200 
+HQ(config-subif)# encapsulation dot1Q 200 
+HQ(config-subif)# ip address 172.16.20.1 255.255.255.0 
+HQ(config-subif)# exit
+!
+HQ(config)# int g 0/0/1.300 
+HQ(config-subif)# encapsulation dot1Q 300 
+HQ(config-subif)# ip address 30.78.21.1 255.255.255.0 
+HQ(config-subif)# ipv6 address 2001:A:B:DEAD::1/64 
+HQ(config-subif)# exit
+!
+HQ(config)#ip dhcp pool OFFICE
+HQ(dhcp-config)#network 30.78.21.0 255.255.255.0
+HQ(dhcp-config)#default-router 30.78.21.1
+HQ(dhcp-config)#option 150 ip 172.16.20.20
+HQ(dhcp-config)#ex
+!
+HQ(config)#ip dhcp pool OFFICE-PC1
+HQ(dhcp-config)#host 30.78.21.10 255.255.255.0
+HQ(dhcp-config)#default-router 30.78.21.1
+HQ(dhcp-config)#client-identifier YYxx.xxxx.xxxx.xx (YY = 01 for Win, 00 for Unix)
+!
+SW2(config)#	ip dhcp snooping database flash:snooping
+!
+SW1(config)#	int fa0/1 
+SW1(config)#	ip dhcp snooping trust 
+SW1(config)#	int ra fa0/5-6 
+SW1(config-if-range)#	ip dhcp snooping trust
+!
+SW2(config)#	int ra fa0/5-6
+SW2(config-if-range)#	ip arp inspection trust
+SW2(config-if-range)#	int fa0/10
+SW2(config-if)#	ip arp inspection trust
+SW2(config-if)# switchport access vlan 300
+!
+FW1(config)# int vlan 20 
+FW1(config-if)# nameif HQ 
+FW1(config-if)# security-level 100 
+FW1(config-if)# ip add 30.78.87.2 255.255.255.248 
+FW1(config-if)# ipv6 address 2001:3::2/64 
+FW1(config)# int e0/2 
+FW1(config-if)# switchport mode trunk
+FW1(config)# telnet 0.0.0.0 0.0.0.0 HQ
+FW1(config-if)# switchport trunk allowed vlan 10,20,200,300
+!
+HQ1(config)#	int gi0/0.20 
+HQ1(config-subif)#	encapsulation dot1Q 20 
+HQ1(config-subif)#	ip add 30.78.87.1 255.255.255.248
+!
+HQ1(config)#	int gi0/0/0.10 
+HQ1(config-subif)#	encapsulation dot1Q 10 
+HQ1(config-subif)#	ip add 172.16.3.1 255.255.255.0 
+HQ1(config-subif)#	ipv6 enable 
+HQ1(config-subif)#	ipv6 address 2001:4::1/64
+!
+FW1(config)# int vlan 10 
+FW1(config-if)# nameif ISP3L2VPN 
+FW1(config-if)# security-level 100 
+FW1(config-if)# ip address 172.16.3.2 255.255.255.0 
+FW1(config-if)# ipv6 enable 
+FW1(config-if)# ipv6 address 2001:4::2/64
+FW1(config)# telnet 0.0.0.0 0.0.0.0 ISP3L2VPN
+!
+BR1(config)#	int gi0/0/0.10 
+BR1(config-subif)#	encapsulation dot1Q 10 
+BR1(config-subif)#	ip add 172.16.3.3 255.255.255.0 
+BR1(config-subif)#	ipv6 enable 
+BR1(config-subif)#	ipv6 address 2001:4::3/64 
+!
+FW1(config)# int e0/4 
+FW1(config-if)# switchport mode trunk 
+FW1(config-if)# switchport trunk allowed vlan 10 
+!
+FW1(config)# int vlan 1 
+FW1(config-if)# ip add 100.45.10.2 255.255.255.252
+!
+HQ1#	telnet 30.78.87.2
+FW1(config)#	 int vlan 901 
+FW1(config-if)#	 nameif 901 
+FW1(config-if)	# security-level 100 
+FW1(config-if)#	 ip add 22.84.4.6 255.255.255.252
+FW1(config)# 	int e0/1 
+FW1(config-if)# 	switchport mode trunk 
+FW1(config-if)# 	switchport trunk allowed vlan 901
+!
+HQ1#	telnet 172.16.3.3
+BR1(config)#	bba-group pppoe PPPOE 
+BR1(config-bba-group)#	virtual-template 1 
+BR1(config)#	int gi0/0/1 
+BR1(config-if)#	no sh 
+BR1(config-if)#	pppoe enable group PPPOE 
+BR1(config-if)#	ip add 192.168.2.1 255.255.255.0
+BR1(config-if)#	ipv6 address 2001:A:B:ACAD::1/64 
+BR1(config-if)#	ipv6 enable
+BR1(config)#	int virtual-template 1
+BR1(config-if)#	encapsulation ppp 
+BR1(config-if)#	ip mtu 1492 
+BR1(config-if)#	ip unnumbered gigabitEthernet 0/0/1 
+BR1(config-if)#	peer default ip address pool IPPC2 
+BR1(config-if)#	ppp authentication pap 
+BR1(config-if)#	ex
+BR1(config)#	ip local pool IPPC2 192.168.2.10 
+BR1(config)#	username pc2user privilege 15 password pc2pass
+!
+BR1(config)#	int Multilink 1 
+BR1(config-if)#	ip add negotiated
+BR1(config-if)#	ppp multilink 
+BR1(config-if)#	ppp multilink group 1 
+BR1(config)#	int serial 0/1/0 
+BR1(config-if)#	encapsulation ppp 
+BR1(config-if)#	ppp multilink 
+BR1(config-if)#	ppp multilink group 1
+BR1(config-if)#	no shut
+BR1(config)#	int serial 0/1/1 
+BR1(config-if)#	encapsulation ppp 
+BR1(config-if)#	ppp multilink 
+BR1(config-if)#	ppp multilink group 1
+BR1(config-if)#	no shut
+BR1(config)#	int serial 0/2/0 
+BR1(config-if)#	no shut
+BR1(config-if)# encapsulation hdlc
+BR1(config-if)#	ip add 22.84.4.2 255.255.255.252
+!
+HQ1(config)#router bgp 65000 
+HQ1(config-router)#address-family ipv4 
+HQ1(config-router-af)#network 1.1.1.1 mask 255.255.255.255 
+HQ1(config-router-af)# network 30.78.21.0 mask 255.255.255.0 
+HQ1(config-router-af)# network 30.78.87.0 mask 255.255.255.248
+HQ1(config-router-af)#exit 
+HQ1(config-router)# neighbor 30.78.87.2 remote-as 65000
+!
+FW1(config)# router bgp 65000 
+FW1(config-router)# address-family ipv4 
+FW1(config-router-af)# neighbor 100.45.10.1 remote-as 65001 
+FW1(config-router-af)# neighbor 30.78.87.1 remote-as 65000 
+FW1(config-router-af)# neighbor 22.84.4.5 remote-as 65002 
+FW1(config-router-af)# network 100.45.10.0 mask 255.255.255.252 
+FW1(config-router-af)# network 30.78.87.0 mask 255.255.255.248 
+FW1(config-router-af)# network 22.84.4.4 mask 255.255.255.252
+FW1(config)# same-security-traffic permit intra-interface 
+FW1(config)# same-security-traffic permit inter-interface
+!
+BR1(config)#router bgp 65010 
+BR1(config-router)#address-family ipv4 
+BR1(config-router-af)# network 3.3.3.3 mask 255.255.255.255 
+BR1(config-router-af)# network 22.84.4.0 mask 255.255.255.252 
+BR1(config-router-af)# network 100.45.5.0 mask 255.255.255.252 
+BR1(config-router-af)#exit 
+BR1(config-router)# neighbor 22.84.4.1 remote-as 65002 
+BR1(config-router)# neighbor 100.45.5.1 remote-as 65001
+!
+BR1(config)#ipv6 router eigrp 6000 
+BR1(config)#int loopback 0
+BR1(config-if)#ipv6 enable 
+BR1(config-if)#ipv6 eigrp 6000
+BR1(config)#int gi0/0/1 
+BR1(config-if)#ipv6 enable 
+BR1(config-if)#ipv6 eigrp 6000 
+BR1(config)#int tunnel1 
+BR1(config-if)#ipv6 enable 
+BR1(config-if)#ipv6 eigrp 6000 
+BR1(config)#int gi0/0/0.10 
+BR1(config-if)#ipv6 enable 
+BR1(config-if)#ipv6 eigrp 6000
+!
+HQ1(config)#ipv6 router eigrp 6000 
+HQ1(config-rtr)#int loopback0 
+HQ1(config-if)#ipv6 enable 
+HQ1(config-if)#ipv6 eigrp 6000
+HQ1(config)#int gi0/0/1.300 
+HQ1(config-if)#ipv6 enable 
+HQ1(config-if)#ipv6 eigrp 6000
+HQ1(config)#int gi0/0/0.20 
+HQ1(config-if)#ipv6 enable 
+HQ1(config-if)#ipv6 eigrp 6000
+HQ1(config)#int tunnel1 
+HQ1(config-if)#ipv6 enable
+HQ1(config-if)#ipv6 eigrp 6000
+!
+HQ1(config)#router ospf 1 
+HQ1(config-router)#network 10.100.100.0 0.0.0.255 area 51 
+HQ1(config-router)# network 172.16.1.0 0.0.0.255 area 0 
+HQ1(config-router)# network 172.16.3.0 0.0.0.255 area 0 
+HQ1(config-router)# network 172.16.20.0 0.0.0.255 area 51 
+HQ1(config-router)# neighbor 172.16.3.2
+!
+FW1(config)# router ospf 1 
+FW1(config-router)# network 172.16.3.0 255.255.255.0 area 0
+!
+HQ1(config)#router ospf 1 
+HQ1(config-router)#neighbor 172.16.3.3
+!
+BR1(config)#router ospf 1 
+BR1(config-router)# network 172.16.1.0 0.0.0.255 area 0 
+BR1(config-router)# network 172.16.3.0 0.0.0.255 area 0 
+BR1(config-router)# network 192.168.2.0 0.0.0.255 area 1 
+BR1(config-router)# neighbor 172.16.1.1 
+BR1(config-router)# neighbor 172.16.3.2 
+BR1(config-router)# neighbor 172.16.3.1 
+
+=====================================GRE==========================================
+BR(config)# int tun 1 
+BR(config-if)# ip address 172.16.1.2 255.255.255.0 
+BR(config-if)# tunnel source 1.1.1.1 
+BR(config-if)# tunnel destination 3.3.3.3 
+BR(config-if)# no sh 
+
+HQ(config)# int tun 1 
+HQ(config-if)# ip address 172.16.1.1 255.255.255.0 
+HQ(config-if)# tunnel source 3.3.3.3 
+HQ(config-if)# tunnel destination 1.1.1.1 
+HQ(config-if)# no sh
